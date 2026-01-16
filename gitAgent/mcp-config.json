@@ -1,0 +1,249 @@
+{
+  "tools": [
+    {
+      "name": "git_info",
+      "title": "Git Info",
+      "description": "Return git repository info for a path (branch, upstream, remotes).",
+      "command": "/code/tools/git_tool.sh git_info",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_status",
+      "title": "Git Status",
+      "description": "Return git status for a repository path.",
+      "command": "/code/tools/git_tool.sh git_status",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_diff",
+      "title": "Git Diff",
+      "description": "Return a unified diff for a file.",
+      "command": "/code/tools/git_tool.sh git_diff",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "file": { "type": "string", "optional": false },
+        "cached": { "type": "boolean", "optional": true },
+        "ref": { "type": "string", "optional": true }
+      }
+    },
+    {
+      "name": "git_stage",
+      "title": "Git Stage",
+      "description": "Stage files in a repository.",
+      "command": "/code/tools/git_tool.sh git_stage",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "files": { "type": "array", "optional": true, "items": { "type": "string" } }
+      }
+    },
+    {
+      "name": "git_unstage",
+      "title": "Git Unstage",
+      "description": "Unstage files in a repository.",
+      "command": "/code/tools/git_tool.sh git_unstage",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "files": { "type": "array", "optional": true, "items": { "type": "string" } }
+      }
+    },
+    {
+      "name": "git_untrack",
+      "title": "Git Untrack",
+      "description": "Remove files from git index while keeping them on disk.",
+      "command": "/code/tools/git_tool.sh git_untrack",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "files": { "type": "array", "optional": true, "items": { "type": "string" } }
+      }
+    },
+    {
+      "name": "git_check_ignore",
+      "title": "Git Check Ignore",
+      "description": "Return ignore rule matches for paths.",
+      "command": "/code/tools/git_tool.sh git_check_ignore",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "files": { "type": "array", "optional": true, "items": { "type": "string" } }
+      }
+    },
+    {
+      "name": "git_restore",
+      "title": "Git Restore",
+      "description": "Restore files to the last commit.",
+      "command": "/code/tools/git_tool.sh git_restore",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "files": { "type": "array", "optional": true, "items": { "type": "string" } }
+      }
+    },
+    {
+      "name": "git_conflict_versions",
+      "title": "Git Conflict Versions",
+      "description": "Return base/ours/theirs versions for a conflicted file.",
+      "command": "/code/tools/git_tool.sh git_conflict_versions",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "file": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_checkout_conflict",
+      "title": "Git Checkout Conflict",
+      "description": "Checkout ours/theirs version for a conflicted file.",
+      "command": "/code/tools/git_tool.sh git_checkout_conflict",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "file": { "type": "string", "optional": false },
+        "source": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_stash",
+      "title": "Git Stash",
+      "description": "Stash local changes.",
+      "command": "/code/tools/git_tool.sh git_stash",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "includeUntracked": { "type": "boolean", "optional": true },
+        "message": { "type": "string", "optional": true }
+      }
+    },
+    {
+      "name": "git_stash_pop",
+      "title": "Git Stash Pop",
+      "description": "Apply and drop the latest stash.",
+      "command": "/code/tools/git_tool.sh git_stash_pop",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "ref": { "type": "string", "optional": true },
+        "reinstateIndex": { "type": "boolean", "optional": true }
+      }
+    },
+    {
+      "name": "git_commit",
+      "title": "Git Commit",
+      "description": "Create a commit from staged changes.",
+      "command": "/code/tools/git_tool.sh git_commit",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "message": { "type": "string", "optional": true },
+        "amend": { "type": "boolean", "optional": true },
+        "signoff": { "type": "boolean", "optional": true },
+        "userName": { "type": "string", "optional": true },
+        "userEmail": { "type": "string", "optional": true }
+      }
+    },
+    {
+      "name": "git_push",
+      "title": "Git Push",
+      "description": "Push the current branch to a remote.",
+      "command": "/code/tools/git_tool.sh git_push",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "remote": { "type": "string", "optional": true },
+        "branch": { "type": "string", "optional": true },
+        "setUpstream": { "type": "boolean", "optional": true },
+        "token": { "type": "string", "optional": true }
+      }
+    },
+    {
+      "name": "git_pull",
+      "title": "Git Pull",
+      "description": "Pull from remote.",
+      "command": "/code/tools/git_tool.sh git_pull",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "remote": { "type": "string", "optional": true },
+        "branch": { "type": "string", "optional": true },
+        "rebase": { "type": "boolean", "optional": true },
+        "ffOnly": { "type": "boolean", "optional": true },
+        "token": { "type": "string", "optional": true }
+      }
+    },
+    {
+      "name": "git_diagnose",
+      "title": "Git Diagnose",
+      "description": "Run git diagnostic checks.",
+      "command": "/code/tools/git_tool.sh git_diagnose",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_repos_overview",
+      "title": "Git Repos Overview",
+      "description": "Scan a root for git repositories.",
+      "command": "/code/tools/git_tool.sh git_repos_overview",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "maxRepos": { "type": "number", "optional": true }
+      }
+    },
+    {
+      "name": "git_identity",
+      "title": "Git Identity",
+      "description": "Read git identity for a repository.",
+      "command": "/code/tools/git_tool.sh git_identity",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_set_identity",
+      "title": "Git Set Identity",
+      "description": "Set git identity for a repository.",
+      "command": "/code/tools/git_tool.sh git_set_identity",
+      "cwd": "workspace",
+      "inputSchema": {
+        "path": { "type": "string", "optional": false },
+        "scope": { "type": "string", "optional": true },
+        "name": { "type": "string", "optional": false },
+        "email": { "type": "string", "optional": false }
+      }
+    },
+    {
+      "name": "git_commit_message",
+      "title": "Generate Git Commit Message",
+      "description": "Generate a Git commit message using an LLM from provided diffs.",
+      "command": "/code/tools/git_tool.sh git_commit_message",
+      "cwd": "workspace",
+      "inputSchema": {
+        "diffs": {
+          "type": "array",
+          "optional": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "repoPath": { "type": "string" },
+              "filePath": { "type": "string" },
+              "diff": { "type": "string" }
+            },
+            "required": ["repoPath", "filePath", "diff"]
+          }
+        }
+      }
+    }
+  ]
+}
