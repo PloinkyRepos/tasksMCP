@@ -2,11 +2,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createGitService } from '../lib/git-service.mjs';
-import { textResponse, jsonResponse, errorResponse } from '../lib/responses.mjs';
 import gitCommitMessage from '../lib/git-commit-message.js';
 
 function safeParseJson(text) {
   try { return JSON.parse(text); } catch { return null; }
+}
+
+function writeJson(value) {
+  process.stdout.write(JSON.stringify(value));
 }
 
 async function readStdinFallback() {
@@ -205,7 +208,7 @@ async function main() {
     || args?.tool_name
     || args?.name;
   if (!toolName) {
-    process.stdout.write(JSON.stringify(errorResponse('Missing TOOL_NAME.')));
+    writeJson({ ok: false, error: 'Missing TOOL_NAME.' });
     return;
   }
 
@@ -213,7 +216,7 @@ async function main() {
     if (toolName === 'git_commit_message') {
       const payload = normalizeArgs(toolName, args);
       const message = await gitCommitMessage(payload, { workspaceRoot: process.env.WORKSPACE_ROOT || process.env.ASSISTOS_FS_ROOT || '' });
-      process.stdout.write(JSON.stringify(jsonResponse({ ok: true, message: typeof message === 'string' ? message : String(message ?? '') })));
+      writeJson({ ok: true, message: typeof message === 'string' ? message : String(message ?? '') });
       return;
     }
 
@@ -226,86 +229,86 @@ async function main() {
     switch (toolName) {
       case 'git_info':
         result = await gitService.gitInfo(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_status':
         result = await gitService.gitStatus(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_diff':
         result = await gitService.gitDiff(payload);
-        process.stdout.write(JSON.stringify(textResponse(result || '')));
+        process.stdout.write(String(result || ''));
         return;
       case 'git_stage':
         result = await gitService.gitStage(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_unstage':
         result = await gitService.gitUnstage(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_untrack':
         result = await gitService.gitUntrack(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_check_ignore':
         result = await gitService.gitCheckIgnore(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_restore':
         result = await gitService.gitRestore(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_conflict_versions':
         result = await gitService.gitConflictVersions(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_checkout_conflict':
         result = await gitService.gitCheckoutConflict(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_stash':
         result = await gitService.gitStash(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_stash_pop':
         result = await gitService.gitStashPop(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_commit':
         result = await gitService.gitCommit(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_push':
         result = await gitService.gitPush(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_pull':
         result = await gitService.gitPull(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_diagnose':
         result = await gitService.gitDiagnose(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_repos_overview':
         result = await gitService.gitReposOverview(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_identity':
         result = await gitService.gitIdentity(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       case 'git_set_identity':
         result = await gitService.gitSetIdentity(payload);
-        process.stdout.write(JSON.stringify(jsonResponse(result)));
+        writeJson(result);
         return;
       default:
         throw new Error(`Unsupported tool: ${toolName}`);
     }
   } catch (error) {
     const message = error?.message || String(error);
-    process.stdout.write(JSON.stringify(errorResponse(message)));
+    writeJson({ ok: false, error: message });
   }
 }
 
