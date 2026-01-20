@@ -1,0 +1,104 @@
+{
+  "tools": [
+    {
+      "name": "task_config",
+      "title": "Task Config",
+      "description": "Read backlog configuration.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {},
+      "env": {
+        "TOOL_NAME": "task_config"
+      }
+    },
+    {
+      "name": "task_list",
+      "title": "Task List",
+      "description": "List tasks with optional filters.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "repoPath": { "type": "string", "optional": true },
+        "status": { "type": "string", "optional": true },
+        "type": { "type": "string", "optional": true },
+        "assignee": { "type": "string", "optional": true },
+        "tag": { "type": "string", "optional": true },
+        "priority": { "type": "string", "optional": true },
+        "q": { "type": "string", "optional": true },
+        "limit": { "type": "number", "optional": true }
+      },
+      "env": {
+        "TOOL_NAME": "task_list"
+      }
+    },
+    {
+      "name": "task_get",
+      "title": "Task Get",
+      "description": "Get a task by id.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "id": { "type": "string", "optional": false }
+      },
+      "env": {
+        "TOOL_NAME": "task_get"
+      }
+    },
+    {
+      "name": "task_create",
+      "title": "Task Create",
+      "description": "Create a task.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "title": { "type": "string", "optional": false },
+        "description": { "type": "string", "optional": true },
+        "observations": { "type": "string", "optional": true },
+        "type": { "type": "string", "optional": true },
+        "status": { "type": "string", "optional": true },
+        "repoPath": { "type": "string", "optional": true },
+        "tags": { "type": "array", "optional": true, "items": { "type": "string" } },
+        "assignee": { "type": "string", "optional": true },
+        "priority": { "type": "string", "optional": true }
+      },
+      "env": {
+        "TOOL_NAME": "task_create"
+      }
+    },
+    {
+      "name": "task_update",
+      "title": "Task Update",
+      "description": "Update a task.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "id": { "type": "string", "optional": false },
+        "title": { "type": "string", "optional": true },
+        "description": { "type": "string", "optional": true },
+        "observations": { "type": "string", "optional": true },
+        "type": { "type": "string", "optional": true },
+        "status": { "type": "string", "optional": true },
+        "repoPath": { "type": "string", "optional": true },
+        "tags": { "type": "array", "optional": true, "items": { "type": "string" } },
+        "assignee": { "type": "string", "optional": true },
+        "priority": { "type": "string", "optional": true }
+      },
+      "env": {
+        "TOOL_NAME": "task_update"
+      }
+    },
+    {
+      "name": "task_delete",
+      "title": "Task Delete",
+      "description": "Delete a task.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "id": { "type": "string", "optional": false }
+      },
+      "env": {
+        "TOOL_NAME": "task_delete"
+      }
+    }
+  ]
+}
