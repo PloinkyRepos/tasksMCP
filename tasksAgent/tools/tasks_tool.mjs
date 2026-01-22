@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import path from 'node:path';
 
 const DEFAULT_CONFIG = {
   statuses: {
-    'todo': 'Todo',
-    'in-progress': 'In Progress',
-    'dev-ready': 'Dev Ready',
+    'new': 'New',
+    'approved': 'Approved',
+    'test-ready': 'Test Ready',
     'testing': 'Testing',
+    'reopened': 'Reopened',
+    'rejected': 'Rejected',
     'done': 'Done'
   },
   priorities: {
@@ -21,7 +24,7 @@ const DEFAULT_CONFIG = {
     'future': 'Future',
     'change': 'Change'
   },
-  defaultStatus: 'todo',
+  defaultStatus: 'new',
   defaultPriority: 'medium',
   defaultType: 'bug',
   allowCustomTags: true
@@ -78,7 +81,33 @@ function getWorkspaceRoot() {
     process.env.PLOINKY_WORKSPACE_ROOT,
     process.env.ASSISTOS_FS_ROOT
   ].filter((value) => typeof value === 'string' && value.trim());
-  return roots.length ? path.resolve(roots[0]) : process.cwd();
+  const cwd = process.cwd();
+  if (roots.length) {
+    const candidate = path.resolve(roots[0]);
+    if (fsSync.existsSync(path.join(candidate, '.ploinky', 'repos'))) {
+      return candidate;
+    }
+  }
+  const byRepos = findWorkspaceRootByReposDir(cwd);
+  if (byRepos) return byRepos;
+  return findWorkspaceRoot(cwd);
+}
+
+function getRepoRootFromArgs(args = {}) {
+  const repoPath = normalizeString(args?.repoPath);
+  if (!repoPath) {
+    throw new Error('repoPath is required.');
+  }
+  const workspaceRoot = getWorkspaceRoot();
+  if (!path.isAbsolute(repoPath)) {
+    const safePart = repoPath.startsWith('/') ? repoPath.slice(1) : repoPath;
+    return path.join(workspaceRoot, safePart);
+  }
+  if (repoPath.startsWith('/.ploinky/repos')) {
+    const safePart = repoPath.replace(/^\/+/, '');
+    return path.join(workspaceRoot, safePart);
+  }
+  return path.resolve(repoPath);
 }
 
 function configPathForRoot(root) {
@@ -89,9 +118,41 @@ function backlogPathForRoot(root) {
   return path.join(root, '.backlog');
 }
 
+function findWorkspaceRoot(startDir) {
+  let current = path.resolve(startDir || process.cwd());
+  for (let i = 0; i < 12; i += 1) {
+    if (
+      fsSync.existsSync(path.join(current, '.backlog.config.json'))
+      || fsSync.existsSync(path.join(current, '.backlog'))
+    ) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return path.resolve(startDir || process.cwd());
+}
+
+function findWorkspaceRootByReposDir(startDir) {
+  let current = path.resolve(startDir || process.cwd());
+  for (let i = 0; i < 12; i += 1) {
+    if (fsSync.existsSync(path.join(current, '.ploinky', 'repos'))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return '';
+}
+
 function normalizeConfig(input) {
   const cfg = input && typeof input === 'object' ? input : {};
-  const statuses = cfg.statuses && typeof cfg.statuses === 'object' ? cfg.statuses : DEFAULT_CONFIG.statuses;
+  let statuses = cfg.statuses && typeof cfg.statuses === 'object' ? cfg.statuses : DEFAULT_CONFIG.statuses;
+  if (statuses && (statuses.todo || statuses['in-progress'] || statuses['dev-ready'])) {
+    statuses = DEFAULT_CONFIG.statuses;
+  }
   const priorities = cfg.priorities && typeof cfg.priorities === 'object' ? cfg.priorities : DEFAULT_CONFIG.priorities;
   const types = cfg.types && typeof cfg.types === 'object' ? cfg.types : DEFAULT_CONFIG.types;
   const statusKeys = Object.keys(statuses);
@@ -111,20 +172,9 @@ function normalizeConfig(input) {
   };
 }
 
-async function loadConfig(root, { ensure = false } = {}) {
-  const configPath = configPathForRoot(root);
-  let config = null;
-  try {
-    const raw = await fs.readFile(configPath, 'utf8');
-    config = safeParseJson(raw);
-  } catch {
-    config = null;
-  }
-  const normalized = normalizeConfig(config);
-  if (ensure && !config) {
-    await fs.writeFile(configPath, JSON.stringify(normalized, null, 2));
-  }
-  return { config: normalized, configPath };
+async function loadConfig() {
+  const normalized = normalizeConfig(DEFAULT_CONFIG);
+  return { config: normalized, configPath: null };
 }
 
 async function loadTasks(root) {
@@ -132,8 +182,8 @@ async function loadTasks(root) {
   try {
     const raw = await fs.readFile(backlogPath, 'utf8');
     const parsed = safeParseJson(raw);
-    if (Array.isArray(parsed)) return { tasks: parsed, backlogPath };
-    if (parsed && Array.isArray(parsed.tasks)) return { tasks: parsed.tasks, backlogPath };
+    if (Array.isArray(parsed)) return { tasks: mergeTasksById(parsed.map(normalizeTask)), backlogPath };
+    if (parsed && Array.isArray(parsed.tasks)) return { tasks: mergeTasksById(parsed.tasks.map(normalizeTask)), backlogPath };
   } catch {
     // ignore
   }
@@ -141,7 +191,7 @@ async function loadTasks(root) {
 }
 
 async function writeTasks(backlogPath, tasks) {
-  const next = Array.isArray(tasks) ? tasks : [];
+  const next = Array.isArray(tasks) ? mergeTasksById(tasks.map(normalizeTask)) : [];
   const tmpPath = `${backlogPath}.tmp`;
   await fs.writeFile(tmpPath, JSON.stringify(next, null, 2));
   await fs.rename(tmpPath, backlogPath);
@@ -149,6 +199,43 @@ async function writeTasks(backlogPath, tasks) {
 
 function normalizeString(value) {
   return String(value || '').trim();
+}
+
+function normalizeTask(task) {
+  if (!task || typeof task !== 'object') return task;
+  return {
+    id: normalizeString(task.id),
+    description: normalizeString(task.description),
+    proposedSolution: normalizeString(task.proposedSolution),
+    observations: normalizeString(task.observations),
+    type: normalizeString(task.type),
+    status: normalizeString(task.status),
+    priority: normalizeString(task.priority),
+    createdAt: normalizeString(task.createdAt),
+    updatedAt: normalizeString(task.updatedAt),
+    updatedBy: normalizeString(task.updatedBy)
+  };
+}
+
+function mergeTasksById(tasks) {
+  const byId = new Map();
+  const list = Array.isArray(tasks) ? tasks : [];
+  for (const task of list) {
+    if (!task || typeof task !== 'object') continue;
+    const id = normalizeString(task.id);
+    if (!id) continue;
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, task);
+      continue;
+    }
+    const nextDate = Date.parse(task.updatedAt || '');
+    const prevDate = Date.parse(existing.updatedAt || '');
+    if (!Number.isNaN(nextDate) && (Number.isNaN(prevDate) || nextDate >= prevDate)) {
+      byId.set(id, task);
+    }
+  }
+  return Array.from(byId.values());
 }
 
 function normalizeTags(value, allowCustomTags) {
@@ -201,25 +288,17 @@ function generateId(existingIds) {
 function matchQuery(task, query) {
   const q = normalizeString(query).toLowerCase();
   if (!q) return true;
-  const title = normalizeString(task.title).toLowerCase();
   const description = normalizeString(task.description).toLowerCase();
-  return title.includes(q) || description.includes(q);
+  const proposedSolution = normalizeString(task.proposedSolution).toLowerCase();
+  const observations = normalizeString(task.observations).toLowerCase();
+  return description.includes(q) || proposedSolution.includes(q) || observations.includes(q);
 }
 
 function taskMatchesFilters(task, filters) {
-  const repoPath = normalizeString(filters.repoPath);
-  if (repoPath && normalizeString(task.repoPath) !== repoPath) return false;
   const status = normalizeString(filters.status);
   if (status && normalizeString(task.status) !== status) return false;
   const type = normalizeString(filters.type);
   if (type && normalizeString(task.type) !== type) return false;
-  const assignee = normalizeString(filters.assignee).toLowerCase();
-  if (assignee && normalizeString(task.assignee).toLowerCase() !== assignee) return false;
-  const tag = normalizeString(filters.tag).toLowerCase();
-  if (tag) {
-    const tags = Array.isArray(task.tags) ? task.tags.map((t) => normalizeString(t).toLowerCase()) : [];
-    if (!tags.includes(tag)) return false;
-  }
   const priority = normalizeString(filters.priority);
   if (priority && normalizeString(task.priority) !== priority) return false;
   if (!matchQuery(task, filters.q)) return false;
@@ -248,15 +327,15 @@ async function main() {
     return;
   }
 
-  const root = getWorkspaceRoot();
+  const root = getRepoRootFromArgs(args);
   try {
     if (toolName === 'task_config') {
-      const { config, configPath } = await loadConfig(root, { ensure: true });
+      const { config, configPath } = await loadConfig();
       writeJson({ ok: true, config, configPath });
       return;
     }
 
-    const { config } = await loadConfig(root);
+    const { config } = await loadConfig();
     const { tasks, backlogPath } = await loadTasks(root);
     const existingIds = new Set(tasks.map((task) => normalizeString(task.id)).filter(Boolean));
 
@@ -283,26 +362,23 @@ async function main() {
     }
 
     if (toolName === 'task_create') {
-      const title = normalizeString(args?.title);
       const id = generateId(existingIds);
       const now = new Date().toISOString();
       const task = {
         id,
-        title,
         description: normalizeString(args?.description),
+        proposedSolution: normalizeString(args?.proposedSolution),
         observations: normalizeString(args?.observations),
         type: resolveType(config, args?.type),
         status: resolveStatus(config, args?.status),
-        repoPath: normalizeString(args?.repoPath),
-        tags: normalizeTags(args?.tags, config.allowCustomTags),
-        assignee: normalizeString(args?.assignee),
         priority: resolvePriority(config, args?.priority),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        updatedBy: normalizeString(args?.updatedBy)
       };
       tasks.push(task);
       await writeTasks(backlogPath, tasks);
-      writeJson({ ok: true, task });
+      writeJson({ ok: true, task: normalizeTask(task) });
       return;
     }
 
@@ -314,18 +390,17 @@ async function main() {
         writeJson({ ok: false, error: `Task not found: ${id}` });
         return;
       }
-      if (args?.title !== undefined) task.title = normalizeString(args.title);
       if (args?.description !== undefined) task.description = normalizeString(args.description);
+      if (args?.proposedSolution !== undefined) task.proposedSolution = normalizeString(args.proposedSolution);
       if (args?.observations !== undefined) task.observations = normalizeString(args.observations);
       if (args?.type !== undefined) task.type = resolveType(config, args.type);
       if (args?.status !== undefined) task.status = resolveStatus(config, args.status);
-      if (args?.repoPath !== undefined) task.repoPath = normalizeString(args.repoPath);
-      if (args?.tags !== undefined) task.tags = normalizeTags(args.tags, config.allowCustomTags);
-      if (args?.assignee !== undefined) task.assignee = normalizeString(args.assignee);
       if (args?.priority !== undefined) task.priority = resolvePriority(config, args.priority);
+      if (args?.updatedBy !== undefined) task.updatedBy = normalizeString(args.updatedBy);
+      delete task.title;
       task.updatedAt = new Date().toISOString();
       await writeTasks(backlogPath, tasks);
-      writeJson({ ok: true, task });
+      writeJson({ ok: true, task: normalizeTask(task) });
       return;
     }
 

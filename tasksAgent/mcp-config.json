@@ -6,7 +6,9 @@
       "description": "Read backlog configuration.",
       "command": "tools/tasks_tool.sh",
       "cwd": "workspace",
-      "inputSchema": {},
+      "inputSchema": {
+        "repoPath": { "type": "string", "optional": false }
+      },
       "env": {
         "TOOL_NAME": "task_config"
       }
@@ -18,11 +20,9 @@
       "command": "tools/tasks_tool.sh",
       "cwd": "workspace",
       "inputSchema": {
-        "repoPath": { "type": "string", "optional": true },
+        "repoPath": { "type": "string", "optional": false },
         "status": { "type": "string", "optional": true },
         "type": { "type": "string", "optional": true },
-        "assignee": { "type": "string", "optional": true },
-        "tag": { "type": "string", "optional": true },
         "priority": { "type": "string", "optional": true },
         "q": { "type": "string", "optional": true },
         "limit": { "type": "number", "optional": true }
@@ -51,15 +51,14 @@
       "command": "tools/tasks_tool.sh",
       "cwd": "workspace",
       "inputSchema": {
-        "title": { "type": "string", "optional": false },
         "description": { "type": "string", "optional": true },
+        "proposedSolution": { "type": "string", "optional": true },
         "observations": { "type": "string", "optional": true },
         "type": { "type": "string", "optional": true },
         "status": { "type": "string", "optional": true },
-        "repoPath": { "type": "string", "optional": true },
-        "tags": { "type": "array", "optional": true, "items": { "type": "string" } },
-        "assignee": { "type": "string", "optional": true },
-        "priority": { "type": "string", "optional": true }
+        "repoPath": { "type": "string", "optional": false },
+        "priority": { "type": "string", "optional": true },
+        "updatedBy": { "type": "string", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_create"
@@ -73,15 +72,14 @@
       "cwd": "workspace",
       "inputSchema": {
         "id": { "type": "string", "optional": false },
-        "title": { "type": "string", "optional": true },
         "description": { "type": "string", "optional": true },
+        "proposedSolution": { "type": "string", "optional": true },
         "observations": { "type": "string", "optional": true },
         "type": { "type": "string", "optional": true },
         "status": { "type": "string", "optional": true },
-        "repoPath": { "type": "string", "optional": true },
-        "tags": { "type": "array", "optional": true, "items": { "type": "string" } },
-        "assignee": { "type": "string", "optional": true },
-        "priority": { "type": "string", "optional": true }
+        "repoPath": { "type": "string", "optional": false },
+        "priority": { "type": "string", "optional": true },
+        "updatedBy": { "type": "string", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_update"
@@ -94,7 +92,8 @@
       "command": "tools/tasks_tool.sh",
       "cwd": "workspace",
       "inputSchema": {
-        "id": { "type": "string", "optional": false }
+        "id": { "type": "string", "optional": false },
+        "repoPath": { "type": "string", "optional": false }
       },
       "env": {
         "TOOL_NAME": "task_delete"
