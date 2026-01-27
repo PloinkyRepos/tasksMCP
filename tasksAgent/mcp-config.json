@@ -21,11 +21,13 @@
       "cwd": "workspace",
       "inputSchema": {
         "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false },
         "status": { "type": "string", "optional": true },
         "type": { "type": "string", "optional": true },
         "priority": { "type": "string", "optional": true },
         "q": { "type": "string", "optional": true },
-        "limit": { "type": "number", "optional": true }
+        "limit": { "type": "number", "optional": true },
+        "__debug": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_list"
@@ -38,7 +40,9 @@
       "command": "tools/tasks_tool.sh",
       "cwd": "workspace",
       "inputSchema": {
-        "id": { "type": "string", "optional": false }
+        "id": { "type": "string", "optional": false },
+        "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false }
       },
       "env": {
         "TOOL_NAME": "task_get"
@@ -57,6 +61,7 @@
         "type": { "type": "string", "optional": true },
         "status": { "type": "string", "optional": true },
         "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false },
         "priority": { "type": "string", "optional": true },
         "updatedBy": { "type": "string", "optional": true }
       },
@@ -78,8 +83,11 @@
         "type": { "type": "string", "optional": true },
         "status": { "type": "string", "optional": true },
         "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false },
         "priority": { "type": "string", "optional": true },
-        "updatedBy": { "type": "string", "optional": true }
+        "updatedBy": { "type": "string", "optional": true },
+        "ifMatch": { "type": "string", "optional": true },
+        "force": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_update"
@@ -93,7 +101,8 @@
       "cwd": "workspace",
       "inputSchema": {
         "id": { "type": "string", "optional": false },
-        "repoPath": { "type": "string", "optional": false }
+        "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false }
       },
       "env": {
         "TOOL_NAME": "task_delete"

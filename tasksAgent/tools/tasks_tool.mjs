@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const DEFAULT_CONFIG = {
   statuses: {
@@ -98,16 +99,20 @@ function getRepoRootFromArgs(args = {}) {
   if (!repoPath) {
     throw new Error('repoPath is required.');
   }
-  const workspaceRoot = getWorkspaceRoot();
+  if (repoPath.startsWith('/.ploinky/')) {
+    throw new Error('repoPath must be an absolute filesystem path (e.g. /Users/.../repos/<repo>), not /.ploinky/...');
+  }
   if (!path.isAbsolute(repoPath)) {
-    const safePart = repoPath.startsWith('/') ? repoPath.slice(1) : repoPath;
-    return path.join(workspaceRoot, safePart);
+    throw new Error('repoPath must be an absolute path.');
   }
-  if (repoPath.startsWith('/.ploinky/repos')) {
-    const safePart = repoPath.replace(/^\/+/, '');
-    return path.join(workspaceRoot, safePart);
+  const resolved = path.resolve(repoPath);
+  if (!fsSync.existsSync(resolved)) {
+    throw new Error(`repoPath does not exist: ${resolved}`);
   }
-  return path.resolve(repoPath);
+  if (!fsSync.statSync(resolved).isDirectory()) {
+    throw new Error(`repoPath is not a directory: ${resolved}`);
+  }
+  return resolved;
 }
 
 function configPathForRoot(root) {
@@ -177,24 +182,160 @@ async function loadConfig() {
   return { config: normalized, configPath: null };
 }
 
-async function loadTasks(root) {
-  const backlogPath = backlogPathForRoot(root);
+async function loadBacklogIndex(root, backlogPath = '') {
+  const { tasks, backlogPaths } = await loadTasks(root, backlogPath);
+  const files = [];
+  for (const filePath of backlogPaths) {
+    const fileTasks = await loadTasksFromFile(filePath);
+    files.push({ path: filePath, tasks: fileTasks.map(normalizeTask) });
+  }
+  const byId = new Map();
+  for (const file of files) {
+    for (const task of file.tasks) {
+      const id = normalizeString(task.id);
+      if (!id) continue;
+      if (!byId.has(id)) {
+        byId.set(id, { task, sourcePath: file.path });
+      }
+    }
+  }
+  return { tasks, files, byId };
+}
+
+const BACKLOG_EXTENSION = '.backlog';
+const BACKLOG_EXCLUDED_DIRS = new Set(['.git', '.ploinky', 'node_modules']);
+
+function isBacklogFilename(name) {
+  return typeof name === 'string' && name.endsWith(BACKLOG_EXTENSION);
+}
+
+function isSafeChildPath(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+}
+
+function resolveBacklogPath(root, backlogPath) {
+  const raw = normalizeString(backlogPath);
+  if (!raw) return '';
+  if (raw.startsWith('/.ploinky/')) {
+    throw new Error('backlogPath must be an absolute filesystem path inside repoPath, not /.ploinky/...');
+  }
+  if (!path.isAbsolute(raw)) {
+    throw new Error('backlogPath must be an absolute path.');
+  }
+  const absolute = path.resolve(raw);
+  if (!isBacklogFilename(absolute)) {
+    throw new Error('backlogPath must end with .backlog.');
+  }
+  if (!isSafeChildPath(root, absolute)) {
+    throw new Error('backlogPath must be inside repoPath.');
+  }
+  return absolute;
+}
+
+async function listBacklogFiles(root) {
+  const results = [];
+  const walk = async (current, depth) => {
+    if (depth > 12) return;
+    let entries = [];
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (BACKLOG_EXCLUDED_DIRS.has(entry.name)) continue;
+        await walk(entryPath, depth + 1);
+      } else if (entry.isFile()) {
+        if (isBacklogFilename(entry.name)) {
+          results.push(entryPath);
+        }
+      }
+    }
+  };
+  await walk(root, 0);
+  return results.sort();
+}
+
+async function loadTasksFromFile(backlogPath) {
   try {
     const raw = await fs.readFile(backlogPath, 'utf8');
     const parsed = safeParseJson(raw);
-    if (Array.isArray(parsed)) return { tasks: mergeTasksById(parsed.map(normalizeTask)), backlogPath };
-    if (parsed && Array.isArray(parsed.tasks)) return { tasks: mergeTasksById(parsed.tasks.map(normalizeTask)), backlogPath };
+    if (Array.isArray(parsed)) return parsed.map(normalizeTask);
+    if (parsed && Array.isArray(parsed.tasks)) return parsed.tasks.map(normalizeTask);
   } catch {
     // ignore
   }
-  return { tasks: [], backlogPath };
+  return [];
+}
+
+async function ensureBacklogFile(backlogPath) {
+  if (!backlogPath) return false;
+  try {
+    await fs.access(backlogPath);
+    return true;
+  } catch {
+    // continue
+  }
+  try {
+    await fs.writeFile(backlogPath, JSON.stringify([], null, 2));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function loadTasks(root, backlogPath = '') {
+  const resolved = backlogPath ? resolveBacklogPath(root, backlogPath) : '';
+  if (resolved) {
+    const tasks = await loadTasksFromFile(resolved);
+    return { tasks: tasks.map((task) => ({ ...task, sourcePath: resolved })), backlogPaths: [resolved] };
+  }
+  const backlogPaths = await listBacklogFiles(root);
+  if (!backlogPaths.length) {
+    return { tasks: [], backlogPaths: [] };
+  }
+  const tasks = [];
+  for (const filePath of backlogPaths) {
+    const fileTasks = await loadTasksFromFile(filePath);
+    tasks.push(...fileTasks.map((task) => ({ ...task, sourcePath: filePath })));
+  }
+  return { tasks, backlogPaths };
 }
 
 async function writeTasks(backlogPath, tasks) {
-  const next = Array.isArray(tasks) ? mergeTasksById(tasks.map(normalizeTask)) : [];
+  const next = Array.isArray(tasks) ? tasks.map(normalizeTask) : [];
   const tmpPath = `${backlogPath}.tmp`;
   await fs.writeFile(tmpPath, JSON.stringify(next, null, 2));
   await fs.rename(tmpPath, backlogPath);
+}
+
+function taskHash(task) {
+  const normalized = normalizeTask(task);
+  const payload = {
+    id: normalized.id,
+    description: normalized.description,
+    proposedSolution: normalized.proposedSolution,
+    observations: normalized.observations,
+    type: normalized.type,
+    status: normalized.status,
+    priority: normalized.priority,
+    createdAt: normalized.createdAt,
+    updatedAt: normalized.updatedAt,
+    updatedBy: normalized.updatedBy
+  };
+  return crypto.createHash('sha1').update(JSON.stringify(payload)).digest('hex');
+}
+
+function decorateTask(task, sourcePath) {
+  const normalized = normalizeTask(task);
+  return {
+    ...normalized,
+    sourcePath,
+    taskHash: taskHash(normalized)
+  };
 }
 
 function normalizeString(value) {
@@ -215,27 +356,6 @@ function normalizeTask(task) {
     updatedAt: normalizeString(task.updatedAt),
     updatedBy: normalizeString(task.updatedBy)
   };
-}
-
-function mergeTasksById(tasks) {
-  const byId = new Map();
-  const list = Array.isArray(tasks) ? tasks : [];
-  for (const task of list) {
-    if (!task || typeof task !== 'object') continue;
-    const id = normalizeString(task.id);
-    if (!id) continue;
-    const existing = byId.get(id);
-    if (!existing) {
-      byId.set(id, task);
-      continue;
-    }
-    const nextDate = Date.parse(task.updatedAt || '');
-    const prevDate = Date.parse(existing.updatedAt || '');
-    if (!Number.isNaN(nextDate) && (Number.isNaN(prevDate) || nextDate >= prevDate)) {
-      byId.set(id, task);
-    }
-  }
-  return Array.from(byId.values());
 }
 
 function normalizeTags(value, allowCustomTags) {
@@ -336,32 +456,60 @@ async function main() {
     }
 
     const { config } = await loadConfig();
-    const { tasks, backlogPath } = await loadTasks(root);
+    const backlogPathRaw = args?.backlogPath ?? args?.backlog_path ?? args?.path ?? '';
+    const backlogPathArg = normalizeString(backlogPathRaw);
+    const { tasks, files, byId } = await loadBacklogIndex(root, backlogPathArg);
     const existingIds = new Set(tasks.map((task) => normalizeString(task.id)).filter(Boolean));
 
     if (toolName === 'task_list') {
       const filters = args && typeof args === 'object' ? args : {};
+      if (filters.__debug === true) {
+        writeJson({
+          ok: false,
+          error: 'debug',
+          debug: {
+            argsKeys: Object.keys(filters),
+            backlogPathRaw,
+            backlogPathArg,
+            repoPath: normalizeString(args?.repoPath),
+            root
+          }
+        });
+        return;
+      }
+      if (!backlogPathArg) {
+        writeJson({ ok: false, error: 'backlogPath is required.' });
+        return;
+      }
       let filtered = tasks.filter((task) => taskMatchesFilters(task, filters));
       filtered = filtered.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
       const limit = Number.isFinite(Number(filters.limit)) ? Number(filters.limit) : null;
       if (limit && limit > 0) filtered = filtered.slice(0, limit);
-      writeJson({ ok: true, tasks: filtered });
+      writeJson({ ok: true, tasks: filtered.map((task) => decorateTask(task, task.sourcePath)) });
       return;
     }
 
     if (toolName === 'task_get') {
       const id = normalizeString(args?.id);
       if (!id) throw new Error('task_get requires an "id" string.');
-      const task = tasks.find((t) => normalizeString(t.id) === id);
-      if (!task) {
+      if (!backlogPathArg) {
+        writeJson({ ok: false, error: 'backlogPath is required.' });
+        return;
+      }
+      const match = byId.get(id);
+      if (!match) {
         writeJson({ ok: false, error: `Task not found: ${id}` });
         return;
       }
-      writeJson({ ok: true, task });
+      writeJson({ ok: true, task: decorateTask(match.task, match.sourcePath) });
       return;
     }
 
     if (toolName === 'task_create') {
+      if (!backlogPathArg) {
+        writeJson({ ok: false, error: 'backlogPath is required.' });
+        return;
+      }
       const id = generateId(existingIds);
       const now = new Date().toISOString();
       const task = {
@@ -376,19 +524,52 @@ async function main() {
         updatedAt: now,
         updatedBy: normalizeString(args?.updatedBy)
       };
-      tasks.push(task);
-      await writeTasks(backlogPath, tasks);
-      writeJson({ ok: true, task: normalizeTask(task) });
+      const targetPath = resolveBacklogPath(root, backlogPathArg);
+      await ensureBacklogFile(targetPath);
+      const targetEntry = files.find((file) => file.path === targetPath);
+      const targetTasks = targetEntry ? targetEntry.tasks : await loadTasksFromFile(targetPath);
+      targetTasks.push(task);
+      await writeTasks(targetPath, targetTasks);
+      writeJson({ ok: true, task: decorateTask(task, targetPath) });
       return;
     }
 
     if (toolName === 'task_update') {
       const id = normalizeString(args?.id);
       if (!id) throw new Error('task_update requires an "id" string.');
-      const task = tasks.find((t) => normalizeString(t.id) === id);
-      if (!task) {
+      if (!backlogPathArg) {
+        writeJson({ ok: false, error: 'backlogPath is required.' });
+        return;
+      }
+      const match = byId.get(id);
+      if (!match) {
         writeJson({ ok: false, error: `Task not found: ${id}` });
         return;
+      }
+      const sourcePath = resolveBacklogPath(root, backlogPathArg);
+      const fileEntry = files.find((file) => file.path === sourcePath);
+      const fileTasks = fileEntry ? fileEntry.tasks : await loadTasksFromFile(sourcePath);
+      const taskIndex = fileTasks.findIndex((entry) => normalizeString(entry.id) === id);
+      if (taskIndex < 0) {
+        writeJson({ ok: false, error: `Task not found: ${id}` });
+        return;
+      }
+      const task = fileTasks[taskIndex];
+      const expectedHash = normalizeString(args?.ifMatch);
+      const allowOverwrite = Boolean(args?.force);
+      if (expectedHash && !allowOverwrite) {
+        const currentHash = taskHash(task);
+        if (currentHash !== expectedHash) {
+          writeJson({
+            ok: false,
+            error: 'Task was modified by someone else.',
+            conflict: {
+              current: decorateTask(task, sourcePath),
+              incoming: decorateTask({ ...task, ...args }, sourcePath)
+            }
+          });
+          return;
+        }
       }
       if (args?.description !== undefined) task.description = normalizeString(args.description);
       if (args?.proposedSolution !== undefined) task.proposedSolution = normalizeString(args.proposedSolution);
@@ -399,20 +580,33 @@ async function main() {
       if (args?.updatedBy !== undefined) task.updatedBy = normalizeString(args.updatedBy);
       delete task.title;
       task.updatedAt = new Date().toISOString();
-      await writeTasks(backlogPath, tasks);
-      writeJson({ ok: true, task: normalizeTask(task) });
+      fileTasks[taskIndex] = task;
+      await writeTasks(sourcePath, fileTasks);
+      writeJson({ ok: true, task: decorateTask(task, sourcePath) });
       return;
     }
 
     if (toolName === 'task_delete') {
       const id = normalizeString(args?.id);
       if (!id) throw new Error('task_delete requires an "id" string.');
-      const next = tasks.filter((t) => normalizeString(t.id) !== id);
-      if (next.length === tasks.length) {
+      if (!backlogPathArg) {
+        writeJson({ ok: false, error: 'backlogPath is required.' });
+        return;
+      }
+      const match = byId.get(id);
+      if (!match) {
         writeJson({ ok: false, error: `Task not found: ${id}` });
         return;
       }
-      await writeTasks(backlogPath, next);
+      const sourcePath = resolveBacklogPath(root, backlogPathArg);
+      const fileEntry = files.find((file) => file.path === sourcePath);
+      const fileTasks = fileEntry ? fileEntry.tasks : await loadTasksFromFile(sourcePath);
+      const next = fileTasks.filter((t) => normalizeString(t.id) !== id);
+      if (next.length === fileTasks.length) {
+        writeJson({ ok: false, error: `Task not found: ${id}` });
+        return;
+      }
+      await writeTasks(sourcePath, next);
       writeJson({ ok: true, deleted: id });
       return;
     }
