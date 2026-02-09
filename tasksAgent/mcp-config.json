@@ -23,14 +23,28 @@
         "repoPath": { "type": "string", "optional": false },
         "backlogPath": { "type": "string", "optional": false },
         "status": { "type": "string", "optional": true },
-        "type": { "type": "string", "optional": true },
-        "priority": { "type": "string", "optional": true },
         "q": { "type": "string", "optional": true },
         "limit": { "type": "number", "optional": true },
         "__debug": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_list"
+      }
+    },
+    {
+      "name": "task_history_list",
+      "title": "Task History List",
+      "description": "List history tasks with optional search.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false },
+        "q": { "type": "string", "optional": true },
+        "limit": { "type": "number", "optional": true }
+      },
+      "env": {
+        "TOOL_NAME": "task_history_list"
       }
     },
     {
@@ -56,14 +70,11 @@
       "cwd": "workspace",
       "inputSchema": {
         "description": { "type": "string", "optional": true },
-        "proposedSolution": { "type": "string", "optional": true },
-        "observations": { "type": "string", "optional": true },
-        "type": { "type": "string", "optional": true },
-        "status": { "type": "string", "optional": true },
+        "options": { "type": "array", "optional": true },
+        "resolution": { "type": "string", "optional": true },
         "repoPath": { "type": "string", "optional": false },
         "backlogPath": { "type": "string", "optional": false },
-        "priority": { "type": "string", "optional": true },
-        "updatedBy": { "type": "string", "optional": true }
+        "forceSave": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_create"
@@ -78,16 +89,14 @@
       "inputSchema": {
         "id": { "type": "string", "optional": false },
         "description": { "type": "string", "optional": true },
-        "proposedSolution": { "type": "string", "optional": true },
-        "observations": { "type": "string", "optional": true },
-        "type": { "type": "string", "optional": true },
+        "options": { "type": "array", "optional": true },
+        "resolution": { "type": "string", "optional": true },
         "status": { "type": "string", "optional": true },
         "repoPath": { "type": "string", "optional": false },
         "backlogPath": { "type": "string", "optional": false },
-        "priority": { "type": "string", "optional": true },
-        "updatedBy": { "type": "string", "optional": true },
         "ifMatch": { "type": "string", "optional": true },
-        "force": { "type": "boolean", "optional": true }
+        "force": { "type": "boolean", "optional": true },
+        "forceSave": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_update"
@@ -102,10 +111,27 @@
       "inputSchema": {
         "id": { "type": "string", "optional": false },
         "repoPath": { "type": "string", "optional": false },
-        "backlogPath": { "type": "string", "optional": false }
+        "backlogPath": { "type": "string", "optional": false },
+        "forceSave": { "type": "boolean", "optional": true }
       },
       "env": {
         "TOOL_NAME": "task_delete"
+      }
+    },
+    {
+      "name": "task_reorder",
+      "title": "Task Reorder",
+      "description": "Reorder tasks by ids.",
+      "command": "tools/tasks_tool.sh",
+      "cwd": "workspace",
+      "inputSchema": {
+        "order": { "type": "array", "optional": false },
+        "repoPath": { "type": "string", "optional": false },
+        "backlogPath": { "type": "string", "optional": false },
+        "forceSave": { "type": "boolean", "optional": true }
+      },
+      "env": {
+        "TOOL_NAME": "task_reorder"
       }
     }
   ]

@@ -1,8 +1,13 @@
 {
   "container": "node:20-alpine",
-  "env": [
-    "ASSISTOS_FS_ROOT",
-    "WORKSPACE_ROOT",
-    "PLOINKY_WORKSPACE_ROOT"
-  ]
+  "profiles": {
+    "default": {
+      "env": [
+        "ASSISTOS_FS_ROOT",
+        "WORKSPACE_ROOT",
+        "PLOINKY_WORKSPACE_ROOT",
+        "LOCK_FOLDER"
+      ]
+    }
+  }
 }
