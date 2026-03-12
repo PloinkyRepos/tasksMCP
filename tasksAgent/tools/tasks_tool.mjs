@@ -62,12 +62,12 @@ function normalizeInput(envelope) {
       current = current.input;
       continue;
     }
-    if (current.arguments && typeof current.arguments === 'object') {
-      current = current.arguments;
+    if (current['arguments'] && typeof current['arguments'] === 'object') {
+      current = current['arguments'];
       continue;
     }
-    if (current.params?.arguments && typeof current.params.arguments === 'object') {
-      current = current.params.arguments;
+    if (current.params?.['arguments'] && typeof current.params['arguments'] === 'object') {
+      current = current.params['arguments'];
       continue;
     }
     if (current.params?.input && typeof current.params.input === 'object') {
@@ -82,6 +82,8 @@ function normalizeInput(envelope) {
 function getWorkspaceRoot() {
   const roots = [
     process.env.ASSISTOS_FS_ROOT,
+    process.env.WORKSPACE_ROOT,
+    process.env.PLOINKY_WORKSPACE_ROOT,
     process.env.MCP_FS_ROOT
   ].filter((value) => typeof value === 'string' && value.trim());
   for (const root of roots) {
