@@ -1,0 +1,385 @@
+.backlog-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px;
+}
+
+.backlog-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 2px;
+}
+
+.backlog-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.backlog-file {
+    font-size: 1.1rem;
+    color: var(--text-soft);
+    flex-grow: 1;
+    font-weight: 700;
+}
+
+.backlog-actions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.backlog-panel button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+}
+
+.backlog-panel button.secondary {
+    background-color: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.theme-dark .backlog-panel button.secondary {
+    background: rgba(31, 41, 55, 0.9);
+    border-color: rgba(71, 85, 105, 0.8);
+    color: #e5eefc;
+}
+
+.backlog-panel button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px rgba(37, 99, 235, 0.28);
+}
+
+.backlog-panel button.secondary:hover {
+    background-color: var(--border);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.backlog-actions .is-active {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+}
+
+.backlog-refresh {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+}
+
+#backlogFilters .backlog-filter-actions button.secondary {
+    align-self: end;
+}
+
+.backlog-refresh svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.backlog-error {
+    display: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(220, 38, 38, 0.12);
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    color: #b91c1c;
+    font-size: 0.85rem;
+}
+
+.backlog-error.is-visible {
+    display: block;
+}
+
+.backlog-conflict {
+    display: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(234, 88, 12, 0.12);
+    border: 1px solid rgba(234, 88, 12, 0.35);
+    color: #c2410c;
+    font-size: 0.85rem;
+}
+
+.backlog-conflict.is-visible {
+    display: block;
+}
+
+.backlog-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.9));
+}
+
+.theme-dark .backlog-filters {
+    border-color: rgba(71, 85, 105, 0.4);
+    background: linear-gradient(180deg, rgba(17, 25, 39, 0.94), rgba(15, 23, 42, 0.96));
+}
+
+.backlog-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    grid-column: 1 / -1;
+}
+
+.backlog-filters label,
+.backlog-create-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
+.backlog-filters .is-hidden {
+    display: none;
+}
+
+.backlog-filters input[type="search"]::-webkit-search-cancel-button {
+    cursor: pointer;
+}
+
+.backlog-create-grid input,
+.backlog-create-grid select,
+.backlog-create-grid textarea {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--file-exp-border);
+    background: var(--file-exp-panel);
+    color: var(--text);
+}
+
+.theme-dark .backlog-create-grid input,
+.theme-dark .backlog-create-grid select,
+.theme-dark .backlog-create-grid textarea {
+    background: rgba(15, 23, 42, 0.88);
+    border-color: rgba(71, 85, 105, 0.55);
+    color: #f8fafc;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.32);
+}
+
+.backlog-section-title {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.backlog-create-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.backlog-carousel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.backlog-carousel-info {
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    min-width: 64px;
+    text-align: center;
+}
+
+.backlog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.backlog-list-view {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px;
+    background: var(--file-exp-panel);
+}
+
+.theme-dark .backlog-list-view {
+    border-color: #334155;
+    background: linear-gradient(180deg, rgba(17, 25, 39, 0.98), rgba(15, 23, 42, 0.96));
+}
+
+.backlog-list-hint {
+    display: none;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    float: right;
+}
+
+.backlog-list-view.is-visible {
+    display: flex;
+}
+
+.backlog-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.7);
+    cursor: grab;
+    transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.theme-dark .backlog-list-item {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(71, 85, 105, 0.42);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.backlog-list-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.theme-dark .backlog-list-item:hover {
+    box-shadow: 0 14px 24px rgba(2, 6, 23, 0.28);
+    border-color: rgba(96, 165, 250, 0.24);
+}
+
+.backlog-list-item:active {
+    cursor: grabbing;
+}
+
+.backlog-list-item.is-drag-over {
+    border-color: var(--accent);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.backlog-list-order {
+    font-weight: 700;
+    color: var(--text-soft);
+    text-align: center;
+}
+
+.backlog-list-desc {
+    color: var(--text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+    max-height: 2.4em;
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.backlog-list-status {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-align: right;
+    justify-self: end;
+    border-radius: 999px;
+    border: 1px solid var(--file-exp-border);
+    padding: 0.3rem 0.65rem;
+    background: rgba(148, 163, 184, 0.14);
+    white-space: nowrap;
+}
+
+.backlog-list-status.status-new {
+    border-color: rgba(148, 163, 184, 0.28);
+    background: rgba(148, 163, 184, 0.16);
+}
+
+.backlog-list-status.status-approved {
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.16);
+    color: #1d4ed8;
+}
+
+.backlog-list-status.status-test-ready {
+    border-color: rgba(245, 158, 11, 0.38);
+    background: rgba(245, 158, 11, 0.18);
+    color: #92400e;
+}
+
+.backlog-list-status.status-testing {
+    border-color: rgba(34, 197, 94, 0.38);
+    background: rgba(34, 197, 94, 0.18);
+    color: #166534;
+}
+
+.backlog-list-status.status-reopened {
+    border-color: rgba(239, 68, 68, 0.38);
+    background: rgba(239, 68, 68, 0.18);
+    color: #991b1b;
+}
+
+.backlog-list-status.status-rejected {
+    border-color: rgba(124, 58, 237, 0.38);
+    background: rgba(124, 58, 237, 0.18);
+    color: #6d28d9;
+}
+
+.backlog-list-status.status-done {
+    border-color: rgba(16, 185, 129, 0.38);
+    background: rgba(16, 185, 129, 0.18);
+    color: #047857;
+}
+
+.theme-dark .backlog-list-status {
+    border-color: rgba(148, 163, 184, 0.28);
+    color: #e5eefc;
+}
+
+.theme-dark .backlog-list-status.status-approved {
+    color: #bfdbfe;
+}
+
+.theme-dark .backlog-list-status.status-test-ready {
+    color: #fde68a;
+}
+
+.theme-dark .backlog-list-status.status-testing {
+    color: #bbf7d0;
+}
+
+.theme-dark .backlog-list-status.status-reopened {
+    color: #fecaca;
+}
+
+.theme-dark .backlog-list-status.status-rejected {
+    color: #ddd6fe;
+}
+
+.theme-dark .backlog-list-status.status-done {
+    color: #a7f3d0;
+}
+
+.backlog-empty {
+    padding: 12px;
+    text-align: center;
+    color: var(--text-soft);
+}
+
+@media (max-width: 980px) {
+    .backlog-filters {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+}
