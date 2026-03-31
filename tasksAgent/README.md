@@ -46,3 +46,8 @@ Relevant environment variables:
 ## UI integration
 
 The repo also contains the Explorer plugin button in [IDE-plugins/tasks-tool-button](./IDE-plugins/tasks-tool-button), which is the expected entry point for interactive task management in the Explorer UI.
+
+## Documentation
+
+- [TA01 - Tasks Agent Overview](./docs/specs/TA/TA01-agent-overview.md)
+- [TA02 - Explorer Plugin](./docs/specs/TA/TA02-explorer-plugin.md)
