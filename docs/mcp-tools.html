@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tasksAssistant Docs - MCP Tools</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main class="content content--with-sidebar">
+        <div class="doc-layout">
+            <aside class="doc-sidebar" aria-label="tasksAssistant documentation navigation">
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Documentation</p>
+                    <nav>
+                        <a href="index.html">Overview</a>
+                        <a href="architecture.html">Architecture</a>
+                        <a href="execution-workflow.html">Tool Execution Workflow</a>
+                        <a href="mcp-tools.html" aria-current="page">MCP Tools</a>
+                        <a href="integrations.html">Ploinky and Explorer Integration</a>
+                        <a href="configuration.html">Manifest and Environment</a>
+                    </nav>
+                </div>
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Specifications</p>
+                    <nav>
+                        <a href="specsLoader.html?spec=specs/matrix.md">Design Specifications</a>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="doc-main">
+                <section class="lead">
+                    <h1>MCP Tools</h1>
+                    <p>Task management operations are declared in <code>tasksAgent/mcp-config.json</code> and executed through <code>tasksAgent/tools/tasks_tool.sh</code>.</p>
+                </section>
+
+                <section>
+                    <h2>Tool Groups</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Group</th>
+                                <th>Tools</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Configuration and discovery</td>
+                                <td><code>task_config</code>, <code>task_list</code>, <code>task_history_list</code></td>
+                                <td>Read task config and list task/history records with filters.</td>
+                            </tr>
+                            <tr>
+                                <td>Task read/write operations</td>
+                                <td><code>task_get</code>, <code>task_create</code>, <code>task_update</code>, <code>task_delete</code></td>
+                                <td>Manage individual task records in backlog files.</td>
+                            </tr>
+                            <tr>
+                                <td>Ordering control</td>
+                                <td><code>task_reorder</code></td>
+                                <td>Apply explicit task ordering by id list.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h2>Common Input Rules</h2>
+                    <ul>
+                        <li><code>repoPath</code> is required and must be an absolute existing directory path.</li>
+                        <li><code>backlogPath</code> must be absolute, inside <code>repoPath</code>, and end with <code>.backlog</code>.</li>
+                        <li>History listing uses <code>.history</code> file extension constraints.</li>
+                        <li>Task mutations can include <code>forceSave</code> controls where supported.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Execution Characteristics</h2>
+                    <ul>
+                        <li>Each call is process-isolated and envelope-normalized before execution.</li>
+                        <li>Backlog content can be refreshed from disk to avoid stale in-memory task reads.</li>
+                        <li>Errors return explicit JSON payloads and do not report silent success.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="site-footer"></div>
+    <script src="partials-loader.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tasksAssistant Docs - Tool Execution Workflow</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main class="content content--with-sidebar">
+        <div class="doc-layout">
+            <aside class="doc-sidebar" aria-label="tasksAssistant documentation navigation">
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Documentation</p>
+                    <nav>
+                        <a href="index.html">Overview</a>
+                        <a href="architecture.html">Architecture</a>
+                        <a href="execution-workflow.html" aria-current="page">Tool Execution Workflow</a>
+                        <a href="mcp-tools.html">MCP Tools</a>
+                        <a href="integrations.html">Ploinky and Explorer Integration</a>
+                        <a href="configuration.html">Manifest and Environment</a>
+                    </nav>
+                </div>
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Specifications</p>
+                    <nav>
+                        <a href="specsLoader.html?spec=specs/matrix.md">Design Specifications</a>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="doc-main">
+                <section class="lead">
+                    <h1>Tool Execution Workflow</h1>
+                    <p>Each MCP tool call starts a new process through <code>tasksAgent/tools/tasks_tool.sh</code> and executes in <code>tasks_tool.mjs</code>.</p>
+                </section>
+
+                <section>
+                    <h2>End-to-End Flow Diagram</h2>
+                    <pre><code>Explorer UI
+    |
+    | callAgentTool("tasksAgent", toolName, args)
+    v
+Ploinky Router -> AgentServer (/mcp)
+    |
+    | execute command from mcp-config.json
+    v
+tasksAgent/tools/tasks_tool.sh
+    |
+    | start Node process
+    v
+tasksAgent/tools/tasks_tool.mjs
+    |
+    | parse MCP envelope and normalize input
+    | resolve repo root from repoPath
+    | validate backlog/history path constraints
+    | execute task operation
+    | refresh/save/forceSave backlog state
+    v
+JSON result -> MCP response -> Explorer UI</code></pre>
+                </section>
+
+                <section>
+                    <h2>Detailed Stages</h2>
+                    <ol>
+                        <li><strong>Dispatch:</strong> AgentServer invokes <code>tools/tasks_tool.sh</code> with environment-bound <code>TOOL_NAME</code>.</li>
+                        <li><strong>Envelope parsing:</strong> dispatcher reads stdin payload and extracts arguments from supported MCP envelope shapes.</li>
+                        <li><strong>Root resolution:</strong> repo root is validated through <code>repoPath</code> and workspace-root env variables.</li>
+                        <li><strong>Path policy:</strong> <code>backlogPath</code> and <code>historyPath</code> are validated to stay inside repo root and required extensions.</li>
+                        <li><strong>Operation logic:</strong> task list/get/create/update/delete/reorder/history flows are applied.</li>
+                        <li><strong>Persistence:</strong> backlog data is refreshed and saved, with optional force-save behavior where configured.</li>
+                        <li><strong>Response emission:</strong> outputs are serialized as JSON; failures are returned as <code>ok: false</code> payloads.</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2>Operational Notes</h2>
+                    <p>The dispatcher keeps invocation state isolated per request while using backlog IO caching and refresh logic for consistency with on-disk changes. This keeps operations predictable for concurrent Explorer interactions.</p>
+                    <div class="doc-callout">
+                        <p>Path safety and explicit operation contracts are enforced before any backlog mutation is persisted.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="site-footer"></div>
+    <script src="partials-loader.js"></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specification Matrix - tasksAssistant Docs</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page { max-width: 1280px; margin: 0 auto; padding: 24px 20px 48px; }
+        .nav-header { margin-bottom: 16px; }
+        .nav-header h1 { margin: 0 0 8px; color: #0b213f; }
+        .spec-container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        #content { background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .error { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="site-header"></div>
+    <div class="page">
+        <div class="nav-header">
+            <h1>Specification Matrix</h1>
+            <small>
+                <a href="index.html">Home</a> |
+                <a href="specsLoader.html?spec=specs/matrix.md">Specs</a> |
+                <span id="current-spec">Loading...</span>
+            </small>
+        </div>
+
+        <div class="spec-container">
+            <div id="content">
+                <div class="loading">Loading specification...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SpecsLoader {
+            constructor() {
+                this.content = document.getElementById('content');
+                this.currentSpecSpan = document.getElementById('current-spec');
+                this.specPath = this.getSpecPath();
+                this.load();
+            }
+
+            getSpecPath() {
+                const params = new URLSearchParams(window.location.search);
+                const value = params.get('spec');
+                if (!value) {
+                    return 'specs/matrix.md';
+                }
+                if (value.includes('/')) {
+                    return value;
+                }
+                return `specs/${value}`;
+            }
+
+            async load() {
+                try {
+                    this.currentSpecSpan.textContent = `Loading: ${this.specPath}`;
+                    const response = await fetch(this.specPath);
+                    if (!response.ok) {
+                        throw new Error(`Specification not found: ${this.specPath}`);
+                    }
+                    const markdown = await response.text();
+                    const html = this.markdownToHtml(markdown);
+                    this.content.innerHTML = html;
+                    this.currentSpecSpan.textContent = this.specPath;
+                    const titleMatch = markdown.match(/^#\s+(.+)$/m);
+                    if (titleMatch) {
+                        document.title = `${titleMatch[1]} - tasksAssistant Docs`;
+                    }
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+
+            showError(message) {
+                this.content.innerHTML = `
+                    <div class="error">
+                        <h3>Error Loading Specification</h3>
+                        <p>${message}</p>
+                        <p><a href="specsLoader.html?spec=specs/matrix.md">Return to Specification Matrix</a></p>
+                    </div>
+                `;
+                this.currentSpecSpan.textContent = 'Error';
+            }
+
+            markdownToHtml(markdown) {
+                const escapeHtml = (text) => text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+
+                const applyInline = (text) => {
+                    const codeStore = [];
+                    const withPlaceholders = text.replace(/`([^`]+)`/g, (_, code) => {
+                        codeStore.push(code);
+                        return `@@CODE_${codeStore.length - 1}@@`;
+                    });
+                    let escaped = escapeHtml(withPlaceholders)
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+                    escaped = escaped.replace(/@@CODE_(\d+)@@/g, (_, idx) => `<code>${escapeHtml(codeStore[idx])}</code>`);
+                    return escaped;
+                };
+
+                const lines = markdown.split('\n');
+                const htmlParts = [];
+                let paragraph = [];
+                let listItems = [];
+                let inCode = false;
+                let codeBuffer = [];
+
+                const flushParagraph = () => {
+                    if (!paragraph.length) return;
+                    htmlParts.push(`<p>${paragraph.map(applyInline).join('<br>')}</p>`);
+                    paragraph = [];
+                };
+
+                const flushList = () => {
+                    if (!listItems.length) return;
+                    htmlParts.push(`<ul>${listItems.map((item) => `<li>${item}</li>`).join('')}</ul>`);
+                    listItems = [];
+                };
+
+                const flushCode = () => {
+                    if (!codeBuffer.length) return;
+                    htmlParts.push(`<pre><code>${escapeHtml(codeBuffer.join('\n'))}</code></pre>`);
+                    codeBuffer = [];
+                };
+
+                for (const rawLine of lines) {
+                    const line = rawLine.trimEnd();
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith('```')) {
+                        if (inCode) {
+                            flushCode();
+                            inCode = false;
+                        } else {
+                            flushParagraph();
+                            flushList();
+                            inCode = true;
+                            codeBuffer = [];
+                        }
+                        continue;
+                    }
+                    if (inCode) {
+                        codeBuffer.push(rawLine);
+                        continue;
+                    }
+                    if (!trimmed) {
+                        flushParagraph();
+                        flushList();
+                        continue;
+                    }
+                    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+                    if (headingMatch) {
+                        flushParagraph();
+                        flushList();
+                        const level = headingMatch[1].length;
+                        htmlParts.push(`<h${level}>${applyInline(headingMatch[2])}</h${level}>`);
+                        continue;
+                    }
+                    const listMatch = trimmed.match(/^-\s+(.+)/);
+                    if (listMatch) {
+                        flushParagraph();
+                        listItems.push(applyInline(listMatch[1]));
+                        continue;
+                    }
+                    paragraph.push(line);
+                }
+
+                flushCode();
+                flushList();
+                flushParagraph();
+                return htmlParts.join('');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new SpecsLoader());
+    </script>
+
+    <div id="site-footer"></div>
+    <script src="partials-loader.js"></script>
+</body>
+</html>

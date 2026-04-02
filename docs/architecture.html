@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tasksAssistant Docs - Architecture</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <main class="content content--with-sidebar">
+        <div class="doc-layout">
+            <aside class="doc-sidebar" aria-label="tasksAssistant documentation navigation">
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Documentation</p>
+                    <nav>
+                        <a href="index.html">Overview</a>
+                        <a href="architecture.html" aria-current="page">Architecture</a>
+                        <a href="execution-workflow.html">Tool Execution Workflow</a>
+                        <a href="mcp-tools.html">MCP Tools</a>
+                        <a href="integrations.html">Ploinky and Explorer Integration</a>
+                        <a href="configuration.html">Manifest and Environment</a>
+                    </nav>
+                </div>
+                <div class="doc-sidebar__group">
+                    <p class="doc-sidebar__group-title">Specifications</p>
+                    <nav>
+                        <a href="specsLoader.html?spec=specs/matrix.md">Design Specifications</a>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="doc-main">
+                <section class="lead">
+                    <h1>Architecture</h1>
+                    <p><code>tasksAgent</code> is an intermediary layer between Explorer task UI actions and repository backlog file operations, routed through <a href="https://ploinky.com/" target="_blank" rel="noopener noreferrer">Ploinky</a> MCP.</p>
+                </section>
+
+                <section>
+                    <h2>Component Overview</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Location</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>MCP tool contracts</td>
+                                <td><code>tasksAgent/mcp-config.json</code></td>
+                                <td>Declares task tools, schemas, wrapper command, and per-tool <code>TOOL_NAME</code>.</td>
+                            </tr>
+                            <tr>
+                                <td>Wrapper command entrypoint</td>
+                                <td><code>tasksAgent/tools/tasks_tool.sh</code></td>
+                                <td>Starts one Node process per invocation and forwards tool identity.</td>
+                            </tr>
+                            <tr>
+                                <td>Dispatcher and handlers</td>
+                                <td><code>tasksAgent/tools/tasks_tool.mjs</code></td>
+                                <td>Parses MCP envelope, validates paths and arguments, executes tool logic.</td>
+                            </tr>
+                            <tr>
+                                <td>Backlog persistence bridge</td>
+                                <td><code>achillesAgentLib/BacklogManager/backlogIO.mjs</code></td>
+                                <td>Loads, refreshes, saves, and force-saves backlog and history files.</td>
+                            </tr>
+                            <tr>
+                                <td>Explorer UI plugin channel</td>
+                                <td><code>tasksAgent/IDE-plugins/tasks-tool-button/</code></td>
+                                <td>Injects task tooling in Explorer toolbar and task modals.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h2>Runtime Boundary</h2>
+                    <p>AgentServer executes task tools from MCP configuration. Each operation runs through the wrapper script, then through dispatcher logic that validates <code>repoPath</code>/<code>backlogPath</code> constraints, and then applies backlog CRUD behavior.</p>
+                    <pre><code>{
+  "name": "task_list",
+  "command": "tools/tasks_tool.sh",
+  "cwd": "workspace",
+  "env": {
+    "TOOL_NAME": "task_list"
+  }
+}</code></pre>
+                </section>
+
+                <section>
+                    <h2>Intermediary Guarantee</h2>
+                    <p>Explorer does not write backlog files directly as a backend authority. It calls <code>tasksAgent</code> contracts, and the agent enforces repository scope, task normalization, and persistence behavior before returning results.</p>
+                    <div class="doc-callout doc-callout--important">
+                        <p>The architecture objective is contract-safe task operations, not moving backlog logic into Explorer host internals.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="site-footer"></div>
+    <script src="partials-loader.js"></script>
+</body>
+</html>
