@@ -40,35 +40,9 @@
                 </section>
 
                 <section class="highlight-box">
-                    <h3>What this agent does</h3>
-                    <ul>
-                        <li>Acts as intermediary between Explorer task UI and backlog file operations.</li>
-                        <li>Exposes controlled MCP tools for config, list, get, create, update, delete, history, and reorder flows.</li>
-                        <li>Enforces path scope rules so backlog and history files stay inside the selected repository root.</li>
-                        <li>Supports Explorer integration via <code>tasksAgent/IDE-plugins/tasks-tool-button/</code>.</li>
-                    </ul>
-                </section>
-
-                <section>
-                    <h2>Documentation Map</h2>
-                    <div class="grid">
-                        <article>
-                            <h3>Architecture</h3>
-                            <p>Layer boundaries, contract routing, and intermediary responsibilities are documented in <a href="architecture.html">Architecture</a>.</p>
-                        </article>
-                        <article>
-                            <h3>Execution Workflow</h3>
-                            <p>Per-call lifecycle from MCP envelope to backlog persistence is documented in <a href="execution-workflow.html">Tool Execution Workflow</a>.</p>
-                        </article>
-                        <article>
-                            <h3>MCP Surface</h3>
-                            <p>Current input contracts and tool groups are listed in <a href="mcp-tools.html">MCP Tools</a>.</p>
-                        </article>
-                        <article>
-                            <h3>Configuration</h3>
-                            <p>Manifest profile, environment inputs, and validation expectations are documented in <a href="configuration.html">Manifest and Environment</a>.</p>
-                        </article>
-                    </div>
+                    <h3>Operational Role</h3>
+                    <p><code>tasksAgent</code> mediates between Explorer task interactions and backlog-file execution through MCP tools that cover configuration, listing, retrieval, mutation, history, and reorder operations.</p>
+                    <p>The agent enforces repository path boundaries and file-extension rules before any mutation, and Explorer integration is delivered through <code>tasksAgent/IDE-plugins/tasks-tool-button/</code> as the UI entry channel.</p>
                 </section>
 
                 <section>
